@@ -13,9 +13,6 @@ class CohortGenerator():
     def __init__(self, label = "", desc = ""):
         self.label = label
         self.desc = desc
-        self.demographics = []
-        self.current_commits = []
-        self.prior_commits = []
         
     def get_raw_data(self, input_data_path : dict, id_var : str, clean_col_names : bool):
         # Load all data and clean column names if required
@@ -344,5 +341,15 @@ class CohortGenerator():
                 print("Cannot process criteria type")
             
             print(f"Processing complete for criteria {criteria_type}\n")
+        return
+    
+    def get_responsive_data(self, input_data_path : dict):
+        for cat in input_data_path.keys():
+            print(f"Retrieving qualifying records for: {cat}")
+            raw_df = getattr(self, cat+"_raw")
+            # Find qualifying records
+            resp_df = raw_df[~raw_df[self.id].isin(self.disqual_ids)]
+            # Set the data tables and assign them to the respective categories
+            setattr(self, cat, resp_df)
         return
     
