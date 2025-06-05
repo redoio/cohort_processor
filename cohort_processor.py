@@ -13,18 +13,30 @@ class CohortGenerator():
     def __init__(self, label = "", desc = ""):
         self.label = label
         self.desc = desc
+        # Add cache for loaded data to improve speed
+        self._data_cache = {}
         
     def get_raw_data(self, input_data_path : dict, id_var : str, clean_col_names : bool):
         # Load all data and clean column names if required
         for cat in input_data_path.keys():
-            if '.csv' in input_data_path[cat]:
-                setattr(self, cat+"_raw", pd.read_csv(input_data_path[cat]))
-                print('Loaded raw data in path: ', input_data_path[cat])
-            elif 'xlsx' in input_data_path[cat]:
-                setattr(self, cat+"_raw", pd.read_excel(input_data_path[cat]))
-                print('Loaded raw data in path: ', input_data_path[cat])
-            else: 
-                print('Input data path could not be understood for: ', cat)
+            # Check if data is already cached to avoid reloading
+            cache_key = f"{cat}_{input_data_path[cat]}"
+            
+            if cache_key in self._data_cache:
+                setattr(self, cat+"_raw", self._data_cache[cache_key].copy())
+            else:
+                if '.csv' in input_data_path[cat]:
+                    data = utils.load_data(input_data_path[cat])
+                    setattr(self, cat+"_raw", data)
+                    self._data_cache[cache_key] = data.copy()  # Cache the data
+                    print('Loaded and cached raw data in path: ', input_data_path[cat])
+                elif 'xlsx' in input_data_path[cat]:
+                    data = utils.load_data(input_data_path[cat])
+                    setattr(self, cat+"_raw", data)
+                    self._data_cache[cache_key] = data.copy()  # Cache the data
+                    print('Loaded and cached raw data in path: ', input_data_path[cat])
+                else: 
+                    print('Input data path could not be understood for: ', cat)
         print("\n")
         
         # Clean col names if requested 
@@ -183,15 +195,26 @@ class CohortGenerator():
         # Clean the column data 
         df.loc[:, offense_var] = utils.clean_blk(data = df[offense_var], remove = ['pc', 'rape', '\n', ' '])
         
+        # Optimize for large datasets - use vectorized operations instead of groupby loop
+        print(f"Processing {len(df)} records for offense rules...")
+        
         # Get the offense variable in the dataset that best matches the offense indicator 
         if how == "Exclude":
-            for id_val, gp in tqdm(df.groupby(self.id)):
-                if any(off in sel_off for off in gp[offense_var].unique()):
-                    disqual_ids.append(id_val)
+            # Vectorized approach: check if any offense in sel_off is present for each ID
+            df_subset = df[[self.id, offense_var]].copy()
+            df_subset['has_target_offense'] = df_subset[offense_var].isin(sel_off)
+            # Group by ID and check if any offense matches
+            id_has_offense = df_subset.groupby(self.id)['has_target_offense'].any()
+            disqual_ids = id_has_offense[id_has_offense].index.tolist()
+            
         elif how == "Include":
-            for id_val, gp in tqdm(df.groupby(self.id)):
-                if any(off not in sel_off for off in gp[offense_var].unique()):
-                    disqual_ids.append(id_val)
+            # Vectorized approach: check if all offenses are in sel_off for each ID
+            df_subset = df[[self.id, offense_var]].copy()
+            df_subset['has_target_offense'] = df_subset[offense_var].isin(sel_off)
+            # Group by ID and check if any offense does NOT match
+            id_has_non_target = df_subset.groupby(self.id)['has_target_offense'].apply(lambda x: not x.all())
+            disqual_ids = id_has_non_target[id_has_non_target].index.tolist()
+            
         else: 
             print("Selection logic not understood")
         
@@ -352,4 +375,3 @@ class CohortGenerator():
             # Set the data tables and assign them to the respective categories
             setattr(self, cat, resp_df)
         return
-    
