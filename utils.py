@@ -6,6 +6,15 @@ from tqdm import tqdm
 import copy
 import os
 
+def load_data(url):
+    if '.csv' in url:
+        return pd.read_csv(url)
+    elif '.xlsx' in url:
+        return pd.read_excel(url)
+    else: 
+        print("URL is neither CSV nor Excel file and cannot be read")
+        return
+    
 def filter_dict(dictn, txt, how = 'contains'):
     """
     

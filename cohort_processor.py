@@ -25,18 +25,11 @@ class CohortGenerator():
             if cache_key in self._data_cache:
                 setattr(self, cat+"_raw", self._data_cache[cache_key].copy())
             else:
-                if '.csv' in input_data_path[cat]:
-                    data = utils.load_data(input_data_path[cat])
-                    setattr(self, cat+"_raw", data)
-                    self._data_cache[cache_key] = data.copy()  # Cache the data
-                    print('Loaded and cached raw data in path: ', input_data_path[cat])
-                elif 'xlsx' in input_data_path[cat]:
-                    data = utils.load_data(input_data_path[cat])
-                    setattr(self, cat+"_raw", data)
-                    self._data_cache[cache_key] = data.copy()  # Cache the data
-                    print('Loaded and cached raw data in path: ', input_data_path[cat])
-                else: 
-                    print('Input data path could not be understood for: ', cat)
+                data = utils.load_data(input_data_path[cat])
+                setattr(self, cat+"_raw", data)
+                self._data_cache[cache_key] = data.copy()  # Cache the data
+                print('Loaded and cached raw data in path: ', input_data_path[cat])
+                
         print("\n")
         
         # Clean col names if requested 
@@ -239,7 +232,7 @@ class CohortGenerator():
             min_length = df[sentence_var].min()
         # Disqualifying IDs - opposite of criteria
         print(f"Finding IDs that are outside of the defined range: {max_length} to {min_length}")
-        disqual_ids = df[(df[sentence_var] > max_length) | (df[sentence_var] < min_length)][self.id].unique()
+        disqual_ids = df[(df[sentence_var] >= max_length) | (df[sentence_var] <= min_length)][self.id].unique()
         # Add to the cohort's disqualifying IDs
         print(f"Identified {len(disqual_ids)} disqualifying IDs from {len(qual_ids)} IDs")
         # Join the new disqualifying IDs with the existing disqualifying list
