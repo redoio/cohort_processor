@@ -101,65 +101,32 @@ class CohortGenerator():
         # Sentence duration in years
         for tc in use_t_cols:
             if "months" in tc.lower():
-                year_transform = []
-                for i in range(0, len(df)):
-                    try:
-                        year_transform.append(round(df[tc][i]/12, 1))
-                    except:
-                        year_transform.append(None)
-                df[tc.replace("months", "years")] = year_transform
+                df[tc.replace("months", "years")] = df[tc].apply(utils.month_to_year)
                 calc_t_cols.append(tc.replace('months', 'years'))
-                print(f"Calculation complete for: {tc.replace('months', 'years')}")
+                print(f"Calculation complete for: '{tc.replace('months', 'years')}'")
             
             if "birthday" in tc.lower():
                 # Age of individual
-                ay = []
-                for i in range(0, len(df)):
-                    try:
-                        x = (present_date - pd.to_datetime(df[tc][i])).days/365
-                        ay.append(round(x,1))
-                    except:
-                        ay.append(None)
-                df['age in years'] = ay
+                df['age in years'] = df[tc].apply(utils.years_between, y = present_date)
                 calc_t_cols.append('age in years')
                 print("Calculation complete for: 'age in years'")
             
             if "offense end date" in tc.lower():
                 # Sentence served in years
-                tsy = []
-                for i in range(0, len(df)):
-                    try:
-                        x = (present_date - pd.to_datetime(df[tc][i])).days/365
-                        tsy.append(round(x,1))
-                    except:
-                        tsy.append(None)
-                df['time served in years'] = tsy
+                df['time served in years'] = df[tc].apply(utils.years_between, y = present_date)
                 calc_t_cols.append('time served in years')
                 print("Calculation complete for: 'time served in years'")
             
         # Try for the rest of the calculations since they require more than one column
         # Age at the time of offense
         if ("offense end date" in use_t_cols) and ("birthday" in use_t_cols):
-            ao = []
-            for i in range(0, len(df)):
-                try:
-                    x = (pd.to_datetime(df['offense end date'][i]) - pd.to_datetime(df['birthday'][i])).days/365
-                    ao.append(round(x,1))
-                except:
-                    ao.append(None)
-            df['age during offense'] = ao
+            df['age during offense'] = df['offense end date'].apply(utils.years_between, y = df['birthday'])
             calc_t_cols.append('age during offense')
             print("Calculation complete for: 'age during offense'")
         
         # Expected release date
         if ("offense end date" in use_t_cols) and ("aggregate sentence in months" in use_t_cols):
-            est = []
-            for i in range(0, len(df)):
-                try:
-                    est.append(pd.to_datetime(df['offense end date'][i]) + relativedelta(months = df['aggregate sentence in months'][i]))
-                except:
-                    est.append(None)
-            df['expected release date'] = est
+            df['expected release date'] = pd.to_datetime(df['offense end date'] + relativedelta(years = df['aggregate sentence in years']))
             calc_t_cols.append('expected release date')
             print("Calculation complete for: 'expected release date'")
             
@@ -189,7 +156,7 @@ class CohortGenerator():
         df.loc[:, offense_var] = utils.clean_blk(data = df[offense_var], remove = ['pc', 'rape', '\n', ' '])
         
         # Optimize for large datasets - use vectorized operations instead of groupby loop
-        print(f"Processing {len(df)} records for offense rules...")
+        print(f"Processing {len(df)} records for offense rules")
         
         # Get the offense variable in the dataset that best matches the offense indicator 
         if how == "Exclude":
