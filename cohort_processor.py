@@ -25,18 +25,11 @@ class CohortGenerator():
             if cache_key in self._data_cache:
                 setattr(self, cat+"_raw", self._data_cache[cache_key].copy())
             else:
-                if '.csv' in input_data_path[cat]:
-                    data = utils.load_data(input_data_path[cat])
-                    setattr(self, cat+"_raw", data)
-                    self._data_cache[cache_key] = data.copy()  # Cache the data
-                    print('Loaded and cached raw data in path: ', input_data_path[cat])
-                elif 'xlsx' in input_data_path[cat]:
-                    data = utils.load_data(input_data_path[cat])
-                    setattr(self, cat+"_raw", data)
-                    self._data_cache[cache_key] = data.copy()  # Cache the data
-                    print('Loaded and cached raw data in path: ', input_data_path[cat])
-                else: 
-                    print('Input data path could not be understood for: ', cat)
+                data = utils.load_data(input_data_path[cat])
+                setattr(self, cat+"_raw", data)
+                self._data_cache[cache_key] = data.copy()  # Cache the data
+                print('Loaded and cached raw data in path: ', input_data_path[cat])
+                
         print("\n")
         
         # Clean col names if requested 
@@ -108,65 +101,32 @@ class CohortGenerator():
         # Sentence duration in years
         for tc in use_t_cols:
             if "months" in tc.lower():
-                year_transform = []
-                for i in range(0, len(df)):
-                    try:
-                        year_transform.append(round(df[tc][i]/12, 1))
-                    except:
-                        year_transform.append(None)
-                df[tc.replace("months", "years")] = year_transform
+                df[tc.replace("months", "years")] = df[tc].apply(utils.month_to_year)
                 calc_t_cols.append(tc.replace('months', 'years'))
-                print(f"Calculation complete for: {tc.replace('months', 'years')}")
+                print(f"Calculation complete for: '{tc.replace('months', 'years')}'")
             
             if "birthday" in tc.lower():
                 # Age of individual
-                ay = []
-                for i in range(0, len(df)):
-                    try:
-                        x = (present_date - pd.to_datetime(df[tc][i])).days/365
-                        ay.append(round(x,1))
-                    except:
-                        ay.append(None)
-                df['age in years'] = ay
+                df['age in years'] = df[tc].apply(utils.years_between, y = present_date)
                 calc_t_cols.append('age in years')
                 print("Calculation complete for: 'age in years'")
             
             if "offense end date" in tc.lower():
                 # Sentence served in years
-                tsy = []
-                for i in range(0, len(df)):
-                    try:
-                        x = (present_date - pd.to_datetime(df[tc][i])).days/365
-                        tsy.append(round(x,1))
-                    except:
-                        tsy.append(None)
-                df['time served in years'] = tsy
+                df['time served in years'] = df[tc].apply(utils.years_between, y = present_date)
                 calc_t_cols.append('time served in years')
                 print("Calculation complete for: 'time served in years'")
             
         # Try for the rest of the calculations since they require more than one column
         # Age at the time of offense
         if ("offense end date" in use_t_cols) and ("birthday" in use_t_cols):
-            ao = []
-            for i in range(0, len(df)):
-                try:
-                    x = (pd.to_datetime(df['offense end date'][i]) - pd.to_datetime(df['birthday'][i])).days/365
-                    ao.append(round(x,1))
-                except:
-                    ao.append(None)
-            df['age during offense'] = ao
+            df['age during offense'] = df['offense end date'].apply(utils.years_between, y = df['birthday'])
             calc_t_cols.append('age during offense')
             print("Calculation complete for: 'age during offense'")
         
         # Expected release date
         if ("offense end date" in use_t_cols) and ("aggregate sentence in months" in use_t_cols):
-            est = []
-            for i in range(0, len(df)):
-                try:
-                    est.append(pd.to_datetime(df['offense end date'][i]) + relativedelta(months = df['aggregate sentence in months'][i]))
-                except:
-                    est.append(None)
-            df['expected release date'] = est
+            df['expected release date'] = utils.add_date_months_vec(df = df, date_col = 'offense end date', months_col = 'aggregate sentence in months')
             calc_t_cols.append('expected release date')
             print("Calculation complete for: 'expected release date'")
             
@@ -196,7 +156,7 @@ class CohortGenerator():
         df.loc[:, offense_var] = utils.clean_blk(data = df[offense_var], remove = ['pc', 'rape', '\n', ' '])
         
         # Optimize for large datasets - use vectorized operations instead of groupby loop
-        print(f"Processing {len(df)} records for offense rules...")
+        print(f"Processing {len(df)} records for offense rules")
         
         # Get the offense variable in the dataset that best matches the offense indicator 
         if how == "Exclude":
@@ -248,7 +208,7 @@ class CohortGenerator():
 
         return self.disqual_ids
         
-    def apply_ruleset(self, prefix = "", clean_col_names = True, pop_ids = 'demographics', use_t_cols = ["aggregate sentence in months", "offense end date"]):
+    def apply_ruleset(self, prefix, clean_col_names, pop_ids, use_t_cols):
         # Initial empty list for disqualifying IDs that will be shared across all rules
         self.disqual_ids = []
         
@@ -315,7 +275,6 @@ class CohortGenerator():
                                                  sel_off = sel_off, 
                                                  offense_var = offense_var, 
                                                  pop_ids = pop_ids)     
-                    
                 except Exception as e:
                     print(f"An error occurred: {e}")
                     
@@ -325,7 +284,6 @@ class CohortGenerator():
                     for line in trace:
                         print(line, end="")
                     pass  
-            
             # For sentence length related queries
             elif "sentence" in criteria_type:
                 try:
@@ -349,17 +307,14 @@ class CohortGenerator():
                                                          max_length = max_length,
                                                          min_length = min_length, 
                                                          pop_ids = pop_ids)   
-                    
                 except Exception as e:
                     print(f"An error occurred: {e}")
-                    
                     print("Full error description:\n")
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     trace = traceback.format_exception(exc_type, exc_value, exc_traceback)
                     for line in trace:
                         print(line, end="")
                     pass      
-            
             else: 
                 print("Cannot process criteria type")
             
@@ -374,4 +329,52 @@ class CohortGenerator():
             resp_df = raw_df[~raw_df[self.id].isin(self.disqual_ids)]
             # Set the data tables and assign them to the respective categories
             setattr(self, cat, resp_df)
+        return
+    
+    def write_responsive_data(self, input_data_path, output_data_path : dict, file_format : str):
+        for file_name in output_data_path.keys():
+            if file_format == 'xlsx':
+                for cat in input_data_path.keys():
+                    pd.to_excel(output_data_path[file_name])
+                    print(f"Wrote output for {cat} to {file_name}{file_format}")
+            elif file_format == ".csv":
+                for cat in input_data_path.keys():
+                    pd.to_csv(output_data_path[file_name])
+                    print(f"Wrote output for {cat} to {file_name}{file_format}")
+    
+    def generate_ruleset_summary(self):
+        summary_parts = []
+        criteria = self.ruleset["criteria"]
+        
+        # Prior commitments
+        if criteria["prior_commitments"]["Offense"]["types"]:
+            prior_mode = "not in" if criteria["prior_commitments"]["Offense"]["mode"] == "Exclude" else "in"
+            prior_types = ", ".join(criteria["prior_commitments"]["Offense"]["types"])
+            summary_parts.append(f"Prior offenses {prior_mode} {prior_types}")
+        
+        # Current commitments
+        if criteria["current_commitments"]["Offense"]["types"]:
+            current_mode = "not in" if criteria["current_commitments"]["Offense"]["mode"] == "Exclude" else "in"
+            current_types = ", ".join(criteria["current_commitments"]["Offense"]["types"])
+            summary_parts.append(f"Current offenses {current_mode} {current_types}")
+        
+        # Controlling offense
+        if criteria["controlling_offense"]["Controlling Offense"]["types"]:
+            ctrl_mode = "not in" if criteria["controlling_offense"]["Controlling Offense"]["mode"] == "Exclude" else "in"
+            ctrl_types = ", ".join(criteria["controlling_offense"]["Controlling Offense"]["types"])
+            summary_parts.append(f"Controlling offenses {ctrl_mode} {ctrl_types}")
+        
+        # Sentence length
+        min_len = criteria["sentence_length"]["Aggregate Sentence in Months"]["min"]
+        max_len = criteria["sentence_length"]["Aggregate Sentence in Months"]["max"]
+        if min_len > 240 or max_len < 10000000:
+            summary_parts.append(f"Sentence length between {min_len} and {max_len} months")
+        
+        # Sentence served
+        min_served = criteria["sentence_served"]["time served in years"]["min"]
+        max_served = criteria["sentence_served"]["time served in years"]["max"]
+        if min_served > 10 or max_served < 10000000:
+            summary_parts.append(f"Time served between {min_served} and {max_served} years")
+        
+        self.ruleset_summary = summary_parts
         return

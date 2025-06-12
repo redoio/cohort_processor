@@ -2,10 +2,52 @@
 import pandas as pd
 import numpy as np
 import datetime
+from dateutil.relativedelta import relativedelta
 from tqdm import tqdm
 import copy
 import os
 
+def load_data(url):
+    if '.csv' in url:
+        return pd.read_csv(url)
+    elif '.xlsx' in url:
+        return pd.read_excel(url)
+    else: 
+        print("URL is neither CSV nor Excel file and cannot be read")
+        return
+
+def month_to_year(x, round_val = 1):
+    try:
+        return round(x/12, round_val)
+    except:
+        return None
+
+def years_between(x, y, round_val = 1):
+    try:
+        x = (pd.to_datetime(y) - pd.to_datetime(x)).days/365
+        return round(x, round_val)
+    except:
+        return None
+    
+def add_years(x, years):
+    if type(years) is int:
+        try:
+            return pd.to_datetime(x) + relativedelta(years = years)
+        except:
+            return None
+        
+def add_date_months_vec(df, date_col, months_col):
+    res = []
+    # Conver to datetime column first 
+    df[date_col] = pd.to_datetime(df[date_col])
+    for (d, m) in df[[date_col, months_col]].values:
+        try:
+            res.append(pd.to_datetime(d) + relativedelta(months = m))
+        except:
+            res.append(None)
+    return res
+        
+    
 def filter_dict(dictn, txt, how = 'contains'):
     """
     
@@ -79,7 +121,6 @@ def clean(data, remove = ['pc', 'rape', '\n', ' ']):
     ----------
     data : str
         A single string. Example: An offense value 'PC123 (A).(1).'
-    
     remove : list, optional
         List of values to be removed from the input string. Default is ['pc', 'rape', '\n', ' ']
         
@@ -368,4 +409,3 @@ def format_date_blk(dfs, date_cols, how = '%m/%d/%Y', inplace = True, label = No
                     df[col+str(label)] = format_date(df[col], how = how)
     return dfs
     
-                

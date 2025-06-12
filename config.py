@@ -10,4 +10,6 @@ NNN_DATA_URL = "https://raw.githubusercontent.com/redoio/prison_pop/main/data/ou
 NNN_PRIOR_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/prison_pop/main/data/output/priorcommits.xlsx"
 NNN_CURRENT_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/prison_pop/main/data/output/currentcommits.xlsx"
 
+HASH_OBJ_MAP = "C:/Users/aparn/hash_object/hash_dict_ids.json"
+
 OFFENSE_CODES_URL = "https://raw.githubusercontent.com/redoio/resentencing_data_initiative/main/eligibility_model/code/offense_classification/county/los_angeles/selection_criteria.xlsx"
