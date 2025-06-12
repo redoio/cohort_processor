@@ -126,7 +126,7 @@ class CohortGenerator():
         
         # Expected release date
         if ("offense end date" in use_t_cols) and ("aggregate sentence in months" in use_t_cols):
-            df['expected release date'] = pd.to_datetime(df['offense end date'] + relativedelta(years = df['aggregate sentence in years']))
+            df['expected release date'] = utils.add_date_months_vec(df = df, date_col = 'offense end date', months_col = 'aggregate sentence in months')
             calc_t_cols.append('expected release date')
             print("Calculation complete for: 'expected release date'")
             
@@ -199,7 +199,7 @@ class CohortGenerator():
             min_length = df[sentence_var].min()
         # Disqualifying IDs - opposite of criteria
         print(f"Finding IDs that are outside of the defined range: {max_length} to {min_length}")
-        disqual_ids = df[(df[sentence_var] >= max_length) | (df[sentence_var] <= min_length)][self.id].unique()
+        disqual_ids = df[(df[sentence_var] > max_length) | (df[sentence_var] < min_length)][self.id].unique()
         # Add to the cohort's disqualifying IDs
         print(f"Identified {len(disqual_ids)} disqualifying IDs from {len(qual_ids)} IDs")
         # Join the new disqualifying IDs with the existing disqualifying list
@@ -208,7 +208,7 @@ class CohortGenerator():
 
         return self.disqual_ids
         
-    def apply_ruleset(self, prefix = "", clean_col_names = True, pop_ids = 'demographics', use_t_cols = ["aggregate sentence in months", "offense end date"]):
+    def apply_ruleset(self, prefix, clean_col_names, pop_ids, use_t_cols):
         # Initial empty list for disqualifying IDs that will be shared across all rules
         self.disqual_ids = []
         
@@ -275,7 +275,6 @@ class CohortGenerator():
                                                  sel_off = sel_off, 
                                                  offense_var = offense_var, 
                                                  pop_ids = pop_ids)     
-                    
                 except Exception as e:
                     print(f"An error occurred: {e}")
                     
@@ -285,7 +284,6 @@ class CohortGenerator():
                     for line in trace:
                         print(line, end="")
                     pass  
-            
             # For sentence length related queries
             elif "sentence" in criteria_type:
                 try:
@@ -309,17 +307,14 @@ class CohortGenerator():
                                                          max_length = max_length,
                                                          min_length = min_length, 
                                                          pop_ids = pop_ids)   
-                    
                 except Exception as e:
                     print(f"An error occurred: {e}")
-                    
                     print("Full error description:\n")
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     trace = traceback.format_exception(exc_type, exc_value, exc_traceback)
                     for line in trace:
                         print(line, end="")
                     pass      
-            
             else: 
                 print("Cannot process criteria type")
             
@@ -334,4 +329,52 @@ class CohortGenerator():
             resp_df = raw_df[~raw_df[self.id].isin(self.disqual_ids)]
             # Set the data tables and assign them to the respective categories
             setattr(self, cat, resp_df)
+        return
+    
+    def write_responsive_data(self, input_data_path, output_data_path : dict, file_format : str):
+        for file_name in output_data_path.keys():
+            if file_format == 'xlsx':
+                for cat in input_data_path.keys():
+                    pd.to_excel(output_data_path[file_name])
+                    print(f"Wrote output for {cat} to {file_name}{file_format}")
+            elif file_format == ".csv":
+                for cat in input_data_path.keys():
+                    pd.to_csv(output_data_path[file_name])
+                    print(f"Wrote output for {cat} to {file_name}{file_format}")
+    
+    def generate_ruleset_summary(self):
+        summary_parts = []
+        criteria = self.ruleset["criteria"]
+        
+        # Prior commitments
+        if criteria["prior_commitments"]["Offense"]["types"]:
+            prior_mode = "not in" if criteria["prior_commitments"]["Offense"]["mode"] == "Exclude" else "in"
+            prior_types = ", ".join(criteria["prior_commitments"]["Offense"]["types"])
+            summary_parts.append(f"Prior offenses {prior_mode} {prior_types}")
+        
+        # Current commitments
+        if criteria["current_commitments"]["Offense"]["types"]:
+            current_mode = "not in" if criteria["current_commitments"]["Offense"]["mode"] == "Exclude" else "in"
+            current_types = ", ".join(criteria["current_commitments"]["Offense"]["types"])
+            summary_parts.append(f"Current offenses {current_mode} {current_types}")
+        
+        # Controlling offense
+        if criteria["controlling_offense"]["Controlling Offense"]["types"]:
+            ctrl_mode = "not in" if criteria["controlling_offense"]["Controlling Offense"]["mode"] == "Exclude" else "in"
+            ctrl_types = ", ".join(criteria["controlling_offense"]["Controlling Offense"]["types"])
+            summary_parts.append(f"Controlling offenses {ctrl_mode} {ctrl_types}")
+        
+        # Sentence length
+        min_len = criteria["sentence_length"]["Aggregate Sentence in Months"]["min"]
+        max_len = criteria["sentence_length"]["Aggregate Sentence in Months"]["max"]
+        if min_len > 240 or max_len < 10000000:
+            summary_parts.append(f"Sentence length between {min_len} and {max_len} months")
+        
+        # Sentence served
+        min_served = criteria["sentence_served"]["time served in years"]["min"]
+        max_served = criteria["sentence_served"]["time served in years"]["max"]
+        if min_served > 10 or max_served < 10000000:
+            summary_parts.append(f"Time served between {min_served} and {max_served} years")
+        
+        self.ruleset_summary = summary_parts
         return

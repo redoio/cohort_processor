@@ -30,10 +30,23 @@ def years_between(x, y, round_val = 1):
         return None
     
 def add_years(x, years):
-    try:
-        return pd.to_datetime(x) + relativedelta(years = years)
-    except:
-        return None
+    if type(years) is int:
+        try:
+            return pd.to_datetime(x) + relativedelta(years = years)
+        except:
+            return None
+        
+def add_date_months_vec(df, date_col, months_col):
+    res = []
+    # Conver to datetime column first 
+    df[date_col] = pd.to_datetime(df[date_col])
+    for (d, m) in df[[date_col, months_col]].values:
+        try:
+            res.append(pd.to_datetime(d) + relativedelta(months = m))
+        except:
+            res.append(None)
+    return res
+        
     
 def filter_dict(dictn, txt, how = 'contains'):
     """
@@ -108,7 +121,6 @@ def clean(data, remove = ['pc', 'rape', '\n', ' ']):
     ----------
     data : str
         A single string. Example: An offense value 'PC123 (A).(1).'
-    
     remove : list, optional
         List of values to be removed from the input string. Default is ['pc', 'rape', '\n', ' ']
         
@@ -397,4 +409,3 @@ def format_date_blk(dfs, date_cols, how = '%m/%d/%Y', inplace = True, label = No
                     df[col+str(label)] = format_date(df[col], how = how)
     return dfs
     
-                
