@@ -61,5 +61,5 @@ for id_val in cohort.demographics['cdcno']:
     if map_ids[id_val] not in list(demographics_nnn['cdcno']):
         diff_ids.append(id_val)
         
-cohort.demographics[cohort.demographics['cdcno'].isin(diff_ids)].to_excel('test.xlsx')
+cohort.demographics[cohort.demographics.isin(diff_ids)].to_excel('test.xlsx')
         

@@ -260,21 +260,25 @@ class CohortGenerator():
                                                 sep = '',
                                                 clean = True)
                     
-                    # Get the logical query: Include, Exclude etc.
-                    how = self.ruleset['criteria'][criteria_type][offense_var]['mode']
-                    print(f"Selected column: {offense_var}; Raw dataset: {data_label}; Logic: {how}")
+                    if len(sel_off) == 0: 
+                        print("No offense codes could be retrieved from the categorizations list. No offense related rules will be applied.")
                     
-                    # Clean col name from ruleset mapping
-                    if clean_col_names:
-                        offense_var = utils.clean(offense_var, remove = ['rape', '\n'])
-
-                    # Apply the rules
-                    _ = self.apply_offense_rules(data = data_label, 
-                                                 how = how,
-                                                 prefix = prefix,
-                                                 sel_off = sel_off, 
-                                                 offense_var = offense_var, 
-                                                 pop_ids = pop_ids)     
+                    else: 
+                        # Get the logical query: Include, Exclude etc.
+                        how = self.ruleset['criteria'][criteria_type][offense_var]['mode']
+                        print(f"Selected column: {offense_var}; Raw dataset: {data_label}; Logic: {how}")
+                        
+                        # Clean col name from ruleset mapping
+                        if clean_col_names:
+                            offense_var = utils.clean(offense_var, remove = ['rape', '\n'])
+    
+                        # Apply the rules
+                        _ = self.apply_offense_rules(data = data_label, 
+                                                     how = how,
+                                                     prefix = prefix,
+                                                     sel_off = sel_off, 
+                                                     offense_var = offense_var, 
+                                                     pop_ids = pop_ids)     
                 except Exception as e:
                     print(f"An error occurred: {e}")
                     
@@ -284,6 +288,7 @@ class CohortGenerator():
                     for line in trace:
                         print(line, end="")
                     pass  
+                    
             # For sentence length related queries
             elif "sentence" in criteria_type:
                 try:
@@ -316,7 +321,7 @@ class CohortGenerator():
                         print(line, end="")
                     pass      
             else: 
-                print("Cannot process criteria type")
+                print("Cannot process criteria type. It is neither offense related or sentence related")
             
             print(f"Processing complete for criteria {criteria_type}\n")
         return
