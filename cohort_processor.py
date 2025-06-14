@@ -158,25 +158,29 @@ class CohortGenerator():
         # Optimize for large datasets - use vectorized operations instead of groupby loop
         print(f"Processing {len(df)} records for offense rules")
         
-        # Get the offense variable in the dataset that best matches the offense indicator 
-        if how == "Exclude":
-            # Vectorized approach: check if any offense in sel_off is present for each ID
-            df_subset = df[[self.id, offense_var]].copy()
-            df_subset['has_target_offense'] = df_subset[offense_var].isin(sel_off)
-            # Group by ID and check if any offense matches
-            id_has_offense = df_subset.groupby(self.id)['has_target_offense'].any()
-            disqual_ids = id_has_offense[id_has_offense].index.tolist()
-            
-        elif how == "Include":
-            # Vectorized approach: check if all offenses are in sel_off for each ID
-            df_subset = df[[self.id, offense_var]].copy()
-            df_subset['has_target_offense'] = df_subset[offense_var].isin(sel_off)
-            # Group by ID and check if any offense does NOT match
-            id_has_non_target = df_subset.groupby(self.id)['has_target_offense'].apply(lambda x: not x.all())
-            disqual_ids = id_has_non_target[id_has_non_target].index.tolist()
-            
-        else: 
-            print("Selection logic not understood")
+        if len(sel_off) >= 0:
+            # Get the offense variable in the dataset that best matches the offense indicator 
+            if how == "Exclude":
+                # Vectorized approach: check if any offense in sel_off is present for each ID
+                df_subset = df[[self.id, offense_var]].copy()
+                df_subset['has_target_offense'] = df_subset[offense_var].isin(sel_off)
+                # Group by ID and check if any offense matches
+                id_has_offense = df_subset.groupby(self.id)['has_target_offense'].any()
+                disqual_ids = id_has_offense[id_has_offense].index.tolist()
+                
+            elif how == "Include":
+                # Vectorized approach: check if all offenses are in sel_off for each ID
+                df_subset = df[[self.id, offense_var]].copy()
+                df_subset['has_target_offense'] = df_subset[offense_var].isin(sel_off)
+                # Group by ID and check if any offense does NOT match
+                id_has_non_target = df_subset.groupby(self.id)['has_target_offense'].apply(lambda x: not x.all())
+                disqual_ids = id_has_non_target[id_has_non_target].index.tolist()
+                
+            else: 
+                print("Selection logic not understood")
+        
+        else:
+            print("Offense selection cannot be done as list of eligible or ineligible offenses loaded is empty")
         
         print(f"Identified {len(disqual_ids)} disqualifying IDs from {len(qual_ids)} IDs")
         # Add to the cohort's disqualifying IDs
@@ -185,7 +189,7 @@ class CohortGenerator():
         
         return self.disqual_ids
     
-    def apply_sentence_length_rules(self, data, sentence_var, max_length, min_length, pop_ids):
+    def apply_sentence_length_rules(self, data : str, sentence_var : str, max_length : int, min_length : int, pop_ids : str):
         # Get the appropriate raw dataset
         df = getattr(self, data)
         # Get the qualifying IDs thus far in the rule application process
@@ -208,7 +212,7 @@ class CohortGenerator():
 
         return self.disqual_ids
         
-    def apply_ruleset(self, prefix, clean_col_names, pop_ids, use_t_cols):
+    def apply_ruleset(self, prefix : str, clean_col_names : bool, pop_ids : str, use_t_cols : list):
         # Initial empty list for disqualifying IDs that will be shared across all rules
         self.disqual_ids = []
         
@@ -260,21 +264,25 @@ class CohortGenerator():
                                                 sep = '',
                                                 clean = True)
                     
-                    # Get the logical query: Include, Exclude etc.
-                    how = self.ruleset['criteria'][criteria_type][offense_var]['mode']
-                    print(f"Selected column: {offense_var}; Raw dataset: {data_label}; Logic: {how}")
+                    if len(sel_off) == 0: 
+                        print("No offense codes could be retrieved from the categorizations list. No offense related rules will be applied.")
                     
-                    # Clean col name from ruleset mapping
-                    if clean_col_names:
-                        offense_var = utils.clean(offense_var, remove = ['rape', '\n'])
-
-                    # Apply the rules
-                    _ = self.apply_offense_rules(data = data_label, 
-                                                 how = how,
-                                                 prefix = prefix,
-                                                 sel_off = sel_off, 
-                                                 offense_var = offense_var, 
-                                                 pop_ids = pop_ids)     
+                    else: 
+                        # Get the logical query: Include, Exclude etc.
+                        how = self.ruleset['criteria'][criteria_type][offense_var]['mode']
+                        print(f"Selected column: {offense_var}; Raw dataset: {data_label}; Logic: {how}")
+                        
+                        # Clean col name from ruleset mapping
+                        if clean_col_names:
+                            offense_var = utils.clean(offense_var, remove = ['rape', '\n'])
+    
+                        # Apply the rules
+                        _ = self.apply_offense_rules(data = data_label, 
+                                                     how = how,
+                                                     prefix = prefix,
+                                                     sel_off = sel_off, 
+                                                     offense_var = offense_var, 
+                                                     pop_ids = pop_ids)     
                 except Exception as e:
                     print(f"An error occurred: {e}")
                     
@@ -284,6 +292,7 @@ class CohortGenerator():
                     for line in trace:
                         print(line, end="")
                     pass  
+                    
             # For sentence length related queries
             elif "sentence" in criteria_type:
                 try:
@@ -316,7 +325,7 @@ class CohortGenerator():
                         print(line, end="")
                     pass      
             else: 
-                print("Cannot process criteria type")
+                print("Cannot process criteria type. It is neither offense related or sentence related")
             
             print(f"Processing complete for criteria {criteria_type}\n")
         return
@@ -331,7 +340,7 @@ class CohortGenerator():
             setattr(self, cat, resp_df)
         return
     
-    def write_responsive_data(self, input_data_path, output_data_path : dict, file_format : str):
+    def write_responsive_data(self, input_data_path : dict, output_data_path : dict, file_format : str):
         for file_name in output_data_path.keys():
             if file_format == 'xlsx':
                 for cat in input_data_path.keys():
