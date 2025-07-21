@@ -36,7 +36,7 @@ class CohortGenerator():
         if clean_col_names: 
             for cat in input_data_path.keys(): 
                 df = getattr(self, cat+"_raw")
-                df.columns = utils.clean_blk(list(df.columns), remove = ['rape', '\n'])
+                df.columns = utils.clean_var_names(list(df.columns), rem = ["\n"])
                 print(f"For dataset {cat}, cleaned columns and set new values: {df.columns}")
                 setattr(self, cat+"_raw", df)
         print("\n")   
@@ -74,73 +74,30 @@ class CohortGenerator():
     def get_population_ids(self, data : str):
         return list(getattr(self, data)[self.id].unique())
     
-    def process_time_vars(self, data_label : str, use_t_cols : list, merge : bool, clean_col_names : bool):
-        # Get the df to process 
-        df = getattr(self, data_label)
+    def apply_enhancement_rules(self, data : str, off_enh : dict, how : str, prefix : str, enh_var : str, pop_ids : str): 
+        # Get the appropriate raw dataset
+        df = getattr(self, data)
+        # Rule specific disqualifying IDs
+        disqual_ids = []
+        # Get the qualifying IDs thus far in the rule application process
+        qual_ids = list(set(df[self.id].unique()).difference(set(self.disqual_ids)))
+        df = df[df[self.id].isin(qual_ids)]
         
-        # Clean all the column names
-        if clean_col_names:
-            df.columns = [utils.clean(col, remove = ['rape','\n']) for col in df.columns]
-            self.id = utils.clean(self.id, remove = None)
-        else:
-            print('Since column names are not cleaned, several required variables for time calculations cannot be found')
-            return 
+        # Optimize for large datasets - use vectorized operations instead of groupby loop
+        print(f"Processing {len(df)} records for offense rules")
         
-        # Add id to the columns needed for calculation 
-        use_t_cols.append(self.id)
+        # Add ID to enhancement variables 
+        enh_var.append(self.id)
         
-        # Initialize calculations 
-        calc_t_cols = []
+        if off_enh:
+            # Get the offense variable in the dataset that best matches the offense indicator 
+            if how == "Exclude":
+                # Vectorized approach: check if any offense in sel_off is present for each ID
+                df_subset = df[enh_var+self.id].copy()
+                df_subset[enh_var].values.flatten()
         
-        # Get the df to process 
-        df = getattr(self, data_label)
         
-        # Get the present date
-        present_date = datetime.datetime.now()
-        
-        # Sentence duration in years
-        for tc in use_t_cols:
-            if "months" in tc.lower():
-                df[tc.replace("months", "years")] = df[tc].apply(utils.month_to_year)
-                calc_t_cols.append(tc.replace('months', 'years'))
-                print(f"Calculation complete for: '{tc.replace('months', 'years')}'")
-            
-            if "birthday" in tc.lower():
-                # Age of individual
-                df['age in years'] = df[tc].apply(utils.years_between, y = present_date)
-                calc_t_cols.append('age in years')
-                print("Calculation complete for: 'age in years'")
-            
-            if "offense end date" in tc.lower():
-                # Sentence served in years
-                df['time served in years'] = df[tc].apply(utils.years_between, y = present_date)
-                calc_t_cols.append('time served in years')
-                print("Calculation complete for: 'time served in years'")
-            
-        # Try for the rest of the calculations since they require more than one column
-        # Age at the time of offense
-        if ("offense end date" in use_t_cols) and ("birthday" in use_t_cols):
-            df['age during offense'] = df['offense end date'].apply(utils.years_between, y = df['birthday'])
-            calc_t_cols.append('age during offense')
-            print("Calculation complete for: 'age during offense'")
-        
-        # Expected release date
-        if ("offense end date" in use_t_cols) and ("aggregate sentence in months" in use_t_cols):
-            df['expected release date'] = utils.add_date_months_vec(df = df, date_col = 'offense end date', months_col = 'aggregate sentence in months')
-            calc_t_cols.append('expected release date')
-            print("Calculation complete for: 'expected release date'")
-            
-        # Return the resulting dataframe with the calculated time columns and the data with NaN/NaTs in these columns
-        # If time variables are to be added to the entire input dataframe
-        if merge: 
-            setattr(self, data_label, df)
-            return df, utils.incorrect_time(df = df, cols = calc_t_cols)
-        # If time variables are to be stored in a separate dataframe
-        else:
-            setattr(self, data_label, df)
-            return df[use_t_cols+calc_t_cols], utils.incorrect_time(df = df, cols = calc_t_cols)
-    
-    def apply_offense_rules(self, data, sel_off, how, prefix, offense_var, pop_ids):       
+    def apply_offense_rules(self, data : str, sel_off : list, how : str, prefix : str, offense_var : str, pop_ids : str):       
         # Get the appropriate raw dataset
         df = getattr(self, data)
         # Rule specific disqualifying IDs
@@ -216,12 +173,6 @@ class CohortGenerator():
         # Initial empty list for disqualifying IDs that will be shared across all rules
         self.disqual_ids = []
         
-        # Process time variables 
-        self.process_time_vars(data_label = pop_ids, 
-                                 use_t_cols = use_t_cols, 
-                                 merge = True, 
-                                 clean_col_names = True)
-        
         # Process each criteria at a time
         for criteria_type in self.ruleset['criteria'].keys():
             print(f"Processing criteria type: {criteria_type}")
@@ -274,7 +225,7 @@ class CohortGenerator():
                         
                         # Clean col name from ruleset mapping
                         if clean_col_names:
-                            offense_var = utils.clean(offense_var, remove = ['rape', '\n'])
+                            offense_var = utils.clean_var_names(offense_var, rem = ["\n"])
     
                         # Apply the rules
                         _ = self.apply_offense_rules(data = data_label, 
@@ -308,7 +259,7 @@ class CohortGenerator():
                     
                     # Clean col name from ruleset mapping
                     if clean_col_names:
-                        sentence_var = utils.clean(list(self.ruleset['criteria'][criteria_type].keys())[0], remove = ['rape', '\n'])
+                        sentence_var = utils.clean_var_names(list(self.ruleset['criteria'][criteria_type].keys())[0], rem = ["\n"])
                     
                     # Apply the rules
                     _ = self.apply_sentence_length_rules(data = data_label,
