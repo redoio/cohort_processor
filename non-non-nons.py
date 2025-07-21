@@ -2,15 +2,14 @@
 from cohort_processor import CohortGenerator
 import config
 import json
-import pd
+import pandas as pd
 
-ruleset = {'criteria': {
-#                       {'controlling_offense': {'Controlling Offense': {'types': ['Serious felonies', 'Super strike offenses', 'Violent felonies', 'Registrable sex offenses'],
-#                                                                          'mode': 'Exclude', 
-#                                                                          'data_label': 'demographics',
-#                                                                          'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
-#                                                                                                    '459': ["/att", "(664)"]}, 
-#                                                                                           'perm': 2}}},
+ruleset = {'criteria': {'controlling_offense': {'Controlling Offense': {'types': ['Serious felonies', 'Super strike offenses', 'Violent felonies', 'Registrable sex offenses'],
+                                                                        'mode': 'Exclude', 
+                                                                        'data_label': 'demographics',
+                                                                        'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
+                                                                                                    '459': ["/att", "(664)"]}, 
+                                                                                          'perm': 2}}},
                         'sentence_length': {'Aggregate Sentence in Months': {'min': 240, 
                                                                              'max': 10000000, 
                                                                              'data_label': 'demographics'}},

@@ -205,6 +205,31 @@ def clean_blk(data,
             return data_new
         
 
+def clean_var_names(val, rem = None):
+    if type(val) is list:
+        mod_val = []
+        for v in val: 
+            try:
+                v = v.replace("_", " ").replace("-", " ").replace("/", " ").rstrip(".").lower()
+                if rem: 
+                    for r in rem: 
+                        v = v.replace(r, "")
+            except:
+                pass
+            mod_val.append(v)
+        return mod_val
+    elif type(val) is str:
+        v = val
+        try:
+            v = v.replace("_", " ").replace("-", " ").replace("/", " ").rstrip(".").lower()
+            if rem: 
+                for r in rem: 
+                    v = v.replace(r, "")
+        except:
+            pass
+        return v
+
+
 def val_search(data, 
                sel, 
                how = 'exact'):
