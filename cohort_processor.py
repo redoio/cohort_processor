@@ -113,7 +113,7 @@ class CohortGenerator():
         df.loc[:, offense_var] = utils.clean_blk(data = df[offense_var], remove = ['pc', 'rape', '\n', ' '])
         
         # Optimize for large datasets - use vectorized operations instead of groupby loop
-        print(f"Processing {len(df)} records for offense rules")
+        print(f"Processing {len(df)} records for {len(df[self.id].unique())} IDs that are present in the dataset")
         
         if len(sel_off) >= 0:
             # Get the offense variable in the dataset that best matches the offense indicator 
@@ -188,6 +188,7 @@ class CohortGenerator():
                     
                     # Get the selected offenses from the ruleset. "Type" and "Offenses" are columns in the selection criteria
                     sel_off = list(self.offense_categories[self.offense_categories["Type"].isin(self.ruleset['criteria'][criteria_type][offense_var]['types'])]["Offenses"])
+                    print(f"Found {len(sel_off)} offenses in the selected offense categories")
                     
                     # Get inputs: permuations
                     try:
@@ -273,7 +274,7 @@ class CohortGenerator():
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     trace = traceback.format_exception(exc_type, exc_value, exc_traceback)
                     for line in trace:
-                        print(line, end="")
+                        print(line, end = "")
                     pass      
             else: 
                 print("Cannot process criteria type. It is neither offense related or sentence related")
@@ -287,6 +288,7 @@ class CohortGenerator():
             raw_df = getattr(self, cat+"_raw")
             # Find qualifying records
             resp_df = raw_df[~raw_df[self.id].isin(self.disqual_ids)]
+            print(f"Found {len(resp_df)} records in {cat} dataset for {len(resp_df[self.id].unique())} IDs out of {len(self.disqual_ids)} IDs")
             # Set the data tables and assign them to the respective categories
             setattr(self, cat, resp_df)
         return

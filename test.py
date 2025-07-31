@@ -5,13 +5,13 @@ import config
 import json
 import pandas as pd
 
-ruleset = {'criteria': {'sentence_length': {'Aggregate Sentence in Months': {'min': 0, 
+ruleset = {'criteria': {'sentence_length': {'aggregate sentence in months': {'min': 0, 
                                                                              'max': 10000000, 
                                                                              'data_label': 'demographics'}},
                         'sentence_served': {'time served in years': {'min': 0, 
                                                                      'max': 50, 
                                                                      'data_label': 'demographics'}},
-                        'prior_commitments': {'Offense': {'types': ['Serious felonies'],
+                        'prior_commitments': {'offense': {'types': ['Serious felonies'],
                                                           'mode': 'Include', 
                                                           'data_label': 'prior_commitments',
                                                           'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
