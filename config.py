@@ -6,9 +6,9 @@ RAW_CURRENT_COMMITMENTS_URL = "C:/Users/aparn/offenses_data/raw/CurrentCommitmen
 RAW_PRIOR_COMMITMENTS_URL = "C:/Users/aparn/offenses_data/raw/PriorCommitments_CDCR.xlsx"
 RAW_DEMOGRAPHICS_URL = "C:/Users/aparn/offenses_data/raw/Demographics_CDCR.xlsx"
 
-NNN_DATA_URL = "https://raw.githubusercontent.com/redoio/prison_pop/main/data/output/demographics.xlsx"
-NNN_PRIOR_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/prison_pop/main/data/output/priorcommits.xlsx"
-NNN_CURRENT_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/prison_pop/main/data/output/currentcommits.xlsx"
+NNN_DATA_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/output/demographics.xlsx"
+NNN_PRIOR_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/output/priorcommits.xlsx"
+NNN_CURRENT_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/output/currentcommits.xlsx"
 
 HASH_OBJ_MAP = "C:/Users/aparn/hash_object/hash_dict_ids.json"
 

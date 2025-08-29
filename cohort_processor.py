@@ -95,7 +95,59 @@ class CohortGenerator():
                 # Vectorized approach: check if any offense in sel_off is present for each ID
                 df_subset = df[enh_var+self.id].copy()
                 df_subset[enh_var].values.flatten()
-        
+
+        def apply_enhancement_rules(self, data : str, sel_enh : list, how : str, prefix : str, enh_var : list, pop_ids : str):       
+            # Get the appropriate raw dataset
+            df = getattr(self, data)
+            # Rule specific disqualifying IDs
+            disqual_ids = []
+            # Get the qualifying IDs thus far in the rule application process
+            qual_ids = list(set(df[self.id].unique()).difference(set(self.disqual_ids)))
+            df = df[df[self.id].isin(qual_ids)]
+
+            for ev in enh_var:
+                # Remove prefix 
+                df.loc[:, ev] = df[ev].str.replace(prefix, "")
+            
+                # Clean the column data 
+                df.loc[:, ev] = utils.clean_blk(data = df[ev], remove = ['pc', 'rape', '\n', ' '])
+            
+            # Combine all columns into a single one
+            df['off enh'] = df.apply(lambda row: row[off_enh].dropna().tolist(), axis=1)
+            
+            # Optimize for large datasets - use vectorized operations instead of groupby loop
+            print(f"Processing {len(df)} records for {len(df[self.id].unique())} IDs that are present in the dataset")
+            
+            if len(sel_enh) >= 0:
+                # Get the offense variable in the dataset that best matches the offense indicator 
+                if how == "Exclude":
+                    # Vectorized approach: check if any offense in sel_off is present for each ID
+                    df_subset = df[[self.id] + enh_var].copy()
+                    df_subset['has_target_enh'] = df_subset.apply(lambda row: list(set(row['off enh']).intersection(set(sel_enh))), axis=1)
+                    # Group by ID and check if any offense matches
+                    id_has_enh = df_subset.groupby(self.id)['has_target_enh'].apply(lambda x: any(len(v) > 1 for v in x))
+                    disqual_ids = id_has_enh[id_has_enh].index.tolist()
+                    
+                elif how == "Include":
+                    # Vectorized approach: check if all offenses are in sel_off for each ID
+                    df_subset = df[[self.id] + enh_var].copy()
+                    df_subset['has_target_enh'] = df_subset.apply(lambda row: list(set(row['off enh']).intersection(set(sel_enh))), axis=1)
+                    # Group by ID and check if any offense does NOT match
+                    id_has_non_target = df_subset.groupby(self.id)['has_target_enh'].apply(lambda x: not x.all())
+                    disqual_ids = id_has_non_target[id_has_non_target].index.tolist()
+                    
+                else: 
+                    print("Selection logic not understood")
+            
+            else:
+                print("Offense selection cannot be done as list of eligible or ineligible offenses loaded is empty")
+            
+            print(f"Identified {len(disqual_ids)} disqualifying IDs from {len(qual_ids)} IDs")
+            # Add to the cohort's disqualifying IDs
+            self.disqual_ids = list(set.union(set(self.disqual_ids), set(disqual_ids)))
+            print(f"Number of resultant qualifying IDs from all rules applied thus far is {len(self.get_population_ids(pop_ids))} - {len(self.disqual_ids)} = {len(self.get_population_ids(pop_ids)) - len(self.disqual_ids)}")
+            
+            return self.disqual_ids
         
     def apply_offense_rules(self, data : str, sel_off : list, how : str, prefix : str, offense_var : str, pop_ids : str):       
         # Get the appropriate raw dataset
@@ -215,6 +267,8 @@ class CohortGenerator():
                                                 how = 'inclusive',
                                                 sep = '',
                                                 clean = True)
+                    
+                    print(f"Selected offenses with implied characters are: {sel_off}")
                     
                     if len(sel_off) == 0: 
                         print("No offense codes could be retrieved from the categorizations list. No offense related rules will be applied.")

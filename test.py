@@ -16,7 +16,28 @@ ruleset = {'criteria': {'sentence_length': {'aggregate sentence in months': {'mi
                                                           'data_label': 'prior_commitments',
                                                           'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
                                                                                     '459': ["/att", "(664)"]}, 
-                                                                           'perm': 2}}}}}
+                                                                           'perm': 2}}},
+                        'offense_enhancements': {'offense': {'types': ['Serious felonies'], 
+                                                             'mode': 'Include',
+                                                             'data_label': 'current_commitments', 
+                                                             'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
+                                                                                       '459': ["/att", "(664)"]}, 
+                                                                              'perm': 2}}}}}
+
+ruleset = {'criteria': {'current_commitments': {'offense': {'types': ['Robbery offenses'],
+                                                            'mode': 'Include', 
+                                                            'data_label': 'current_commitments',
+                                                            'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
+                                                                                       '459': ["/att", "(664)"]}, 
+                                                                           'perm': 2}}},
+                        'controlling_offense': {'controlling offense': {'types': ['Robbery offenses'],
+                                                                        'mode': 'Include', 
+                                                                        'data_label': 'demographics',
+                                                                        'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
+                                                                                                   '459': ["/att", "(664)"]}, 
+                                                                                         'perm': 2}}}                                              
+                        }}
+
 
 
 # Initialize the cohort and generate a non-non-nons scenario
