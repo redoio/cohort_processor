@@ -5,18 +5,38 @@ import config
 import json
 import pandas as pd
 
-ruleset = {'criteria': {'sentence_length': {'Aggregate Sentence in Months': {'min': 0, 
+ruleset = {'criteria': {'sentence_length': {'aggregate sentence in months': {'min': 0, 
                                                                              'max': 10000000, 
                                                                              'data_label': 'demographics'}},
                         'sentence_served': {'time served in years': {'min': 0, 
                                                                      'max': 50, 
                                                                      'data_label': 'demographics'}},
-                        'prior_commitments': {'Offense': {'types': ['Serious felonies'],
+                        'prior_commitments': {'offense': {'types': ['Serious felonies'],
                                                           'mode': 'Include', 
                                                           'data_label': 'prior_commitments',
                                                           'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
                                                                                     '459': ["/att", "(664)"]}, 
-                                                                           'perm': 2}}}}}
+                                                                           'perm': 2}}},
+                        'offense_enhancements': {'off_enh': {'types': ['Firearm enhancements'], 
+                                                             'mode': 'Include',
+                                                             'data_label': 'current_commitments', 
+                                                             'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
+                                                                                       '459': ["/att", "(664)"]}, 
+                                                                              'perm': 2}}},
+                        'current_commitments': {'offense': {'types': ['Robbery offenses'],
+                                                            'mode': 'Include', 
+                                                            'data_label': 'current_commitments',
+                                                            'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
+                                                                                       '459': ["/att", "(664)"]}, 
+                                                                           'perm': 2}}},
+                        'controlling_offense': {'controlling offense': {'types': ['Robbery offenses'],
+                                                                        'mode': 'Include', 
+                                                                        'data_label': 'demographics',
+                                                                        'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
+                                                                                                   '459': ["/att", "(664)"]}, 
+                                                                                         'perm': 2}}}                                              
+                        }}
+
 
 
 # Initialize the cohort and generate a non-non-nons scenario
@@ -28,7 +48,21 @@ cohort.get_raw_data(input_data_path = {'demographics': config.DEFAULT_DATA_URL,
                     clean_col_names = True)
 cohort.get_offense_categorizations(config.OFFENSE_CODES_URL)
 cohort.get_ruleset(ruleset = ruleset)
-cohort.apply_ruleset(prefix = "PC", clean_col_names = True, pop_ids = 'demographics_raw', use_t_cols = ["aggregate sentence in months", "offense end date"])
+cohort.apply_ruleset(prefix = "PC", 
+                     clean_col_names = True, 
+                     pop_ids = 'demographics_raw', 
+                     use_t_cols = ["aggregate sentence in months", "offense end date"], 
+                     off_enh_cols = ['off enh1',
+                                     'off enh2',
+                                     'off enh3',
+                                     'off enh4',
+                                     'off enh5',
+                                     'off enh6',
+                                     'off enh7',
+                                     'off enh8',
+                                     'off enh9',
+                                     'off enh10',
+                                     'off enh11'])
 cohort.get_responsive_data(input_data_path = {'demographics': config.DEFAULT_DATA_URL, 
                                               'current_commitments': config.CURRENT_COMMITMENTS_URL, 
                                               'prior_commitments': config.PRIOR_COMMITMENTS_URL})
