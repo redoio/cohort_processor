@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from tqdm import tqdm
-from cohort_processor import CohortGenerator
-import config
+from .cohort_processor import CohortGenerator
+from . import config
 from pandas import ExcelWriter
 
 

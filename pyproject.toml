@@ -1,0 +1,30 @@
+[build-system]
+# This tells pip how to build your package
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Basic info
+name = "cohort-processor"                       # package name (hyphen OK)
+version = "0.1.0"                              # must match __version__ in __init__.py
+description = "Cohort processing utilities for offense categorization, eligibility rules, and sentencing analysis."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Aparna Komarla", email = "dev@redo.io" }]
+
+# Dependencies (list what your code actually imports)
+dependencies = [
+  "numpy>=1.23,<3",
+  "pandas>=1.5,<3",
+  "tqdm>=4.60,<5",
+  "python-dateutil>=2.8,<3",
+  "openpyxl>=3.0,<4"
+]
+
+[project.urls]
+Homepage = "https://github.com/redoio/cohort_processor"
+
+# Tell setuptools where to find the package
+[tool.setuptools.packages.find]
+where = ["."]
