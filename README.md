@@ -1,2 +1,1 @@
-# cohort_processor
-
+A Python, object-oriented reimplementation of the [Resentencing Data Initiative](https://github.com/redoio/resentencing_data_initiative/tree/main) eligibility tool (a rules-based model used to identify people eligible for resentencing). This repo reproduces the original project's behavior with a clear, testable OOP design (classes for people, offenses, rules, model execution, and reporting). Based on the original project by Redo.io.
