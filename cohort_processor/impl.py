@@ -2,7 +2,7 @@
 from itertools import permutations, product
 import pandas as pd
 import copy
-from . import utils
+import utils
 
 def gen_impl_off(offenses, 
                  impl_rel, 

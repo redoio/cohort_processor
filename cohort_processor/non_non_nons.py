@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from .cohort_processor import CohortGenerator
-from . import config
+from cohort_processor import CohortGenerator
+import config
 import json
 import pandas as pd
 

@@ -2,9 +2,9 @@
 import pandas as pd
 from tqdm import tqdm
 import datetime
-from . import utils
+import utils
 from dateutil.relativedelta import relativedelta
-from . import impl
+import impl
 import traceback
 import sys
 import os
