@@ -18,16 +18,16 @@ def gen_impl_off(offenses,
         offenses = utils.clean_blk(data = offenses)
     
     # Remove exceptions from the list of offenses
-    offenses_woe = offenses[:]
+    offenses_woe = copy.deepcopy(offenses)
     for rel in impl_rel.keys():
         if (rel != 'all'):
             for off in offenses:
                 if rel in off:
-                    offenses_woe.remove(rel)
+                    offenses_woe.remove(off)
     
     if how == 'inclusive':
         # Initialize list of implied offenses - add the baseline offenses
-        impl_off = offenses[:]
+        impl_off = copy.deepcopy(offenses_woe)
     else:
         impl_off = []
         
