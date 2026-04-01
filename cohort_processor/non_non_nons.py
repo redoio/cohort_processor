@@ -45,10 +45,10 @@ cohort.get_responsive_data(input_data_path = {'demographics': config.DEFAULT_DAT
                                              'prior_commitments': config.PRIOR_COMMITMENTS_URL})
 
 # See the resultant records 
-cohort.demographics.to_excel(config.WRITE_PATH+"/demographics.xlsx")
-cohort.demographics.to_csv(config.WRITE_PATH+"/demographics.csv")
-cohort.current_commitments.to_excel(config.WRITE_PATH+"/current_commitments.xlsx")
-cohort.current_commitments.to_csv(config.WRITE_PATH+"/current_commitments.csv")
-cohort.prior_commitments.to_excel(config.WRITE_PATH+"/prior_commitments.xlsx")
-cohort.prior_commitments.to_csv(config.WRITE_PATH+"/prior_commitments.csv")
+cohort.demographics.to_excel(config.WRITE_PATH+"/demographics.xlsx", index = False)
+cohort.demographics.to_csv(config.WRITE_PATH+"/demographics.csv", index = False)
+cohort.current_commitments.to_excel(config.WRITE_PATH+"/current_commitments.xlsx", index = False)
+cohort.current_commitments.to_csv(config.WRITE_PATH+"/current_commitments.csv", index = False)
+cohort.prior_commitments.to_excel(config.WRITE_PATH+"/prior_commitments.xlsx", index = False)
+cohort.prior_commitments.to_csv(config.WRITE_PATH+"/prior_commitments.csv", index = False)
 
