@@ -412,13 +412,13 @@ class CohortGenerator():
             summary_parts.append(f"Prior offenses {prior_mode} {prior_types}")
         
         # Current commitments
-        if criteria["current_commitments"]["Offense"]["types"]:
+        if criteria["current_commitments"]["offense"]["types"]:
             current_mode = "not in" if criteria["current_commitments"]["offense"]["mode"] == "Exclude" else "in"
             current_types = ", ".join(criteria["current_commitments"]["offense"]["types"])
             summary_parts.append(f"Current offenses {current_mode} {current_types}")
         
         # Controlling offense
-        if criteria["controlling_offense"]["Controlling Offense"]["types"]:
+        if criteria["controlling_offense"]["controlling offense"]["types"]:
             ctrl_mode = "not in" if criteria["controlling_offense"]["controlling offense"]["mode"] == "Exclude" else "in"
             ctrl_types = ", ".join(criteria["controlling_offense"]["controlling offense"]["types"])
             summary_parts.append(f"Controlling offenses {ctrl_mode} {ctrl_types}")

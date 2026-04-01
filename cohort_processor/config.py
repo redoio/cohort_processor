@@ -20,4 +20,4 @@ HASH_OBJ_MAP = "C:/Users/aparn/hash_object/12_2023/hash_dict_ids.json"
 OFFENSE_CODES_URL = "https://raw.githubusercontent.com/redoio/resentencing_data_initiative/main/eligibility_model/code/offense_classification/county/los_angeles/selection_criteria.xlsx"
 
 # Write to URL
-WRITE_PATH = "C:/Users/aparn/scenarios/nnn_cohort/04_2025"
+WRITE_PATH = "C:/Users/aparn/scenarios/nnn_cohort/04_2025/hashed"
