@@ -9,9 +9,9 @@ PRIOR_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/offenses_data/
 CURRENT_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/offenses_data/main/data/04_2025/current_commitments.csv"
 
 # 2023 non-non-nons
-NNN_DATA_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/output/demographics.xlsx"
-NNN_PRIOR_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/output/prior_commitments.xlsx"
-NNN_CURRENT_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/output/current_commitments.xlsx"
+NNN_DATA_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/12_2023/demographics.xlsx"
+NNN_PRIOR_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/12_2023/prior_commitments.xlsx"
+NNN_CURRENT_COMMITMENTS_URL = "https://raw.githubusercontent.com/redoio/scenarios/main/data/12_2023/current_commitments.xlsx"
 
 # 2023 hash map
 HASH_OBJ_MAP = "C:/Users/aparn/hash_object/12_2023/hash_dict_ids.json"

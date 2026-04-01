@@ -17,7 +17,7 @@ ruleset = {'criteria': {'sentence_length': {'aggregate sentence in months': {'mi
                                                           'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
                                                                                     '459': ["/att", "(664)"]}, 
                                                                            'perm': 2}}},
-                        'offense_enhancements': {'off_enh': {'types': ['Firearm enhancements'], 
+                        'offense_enhancements': {'off enh': {'types': ['Firearm enhancements'], 
                                                              'mode': 'Include',
                                                              'data_label': 'current_commitments', 
                                                              'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
