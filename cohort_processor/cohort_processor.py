@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
-from tqdm import tqdm
-import datetime
 import utils
-from dateutil.relativedelta import relativedelta
 import impl
 import traceback
 import sys
-import os
 
 class CohortGenerator():
     def __init__(self, label = "", desc = ""):
@@ -410,26 +406,26 @@ class CohortGenerator():
         criteria = self.ruleset["criteria"]
         
         # Prior commitments
-        if criteria["prior_commitments"]["Offense"]["types"]:
-            prior_mode = "not in" if criteria["prior_commitments"]["Offense"]["mode"] == "Exclude" else "in"
-            prior_types = ", ".join(criteria["prior_commitments"]["Offense"]["types"])
+        if criteria["prior_commitments"]["offense"]["types"]:
+            prior_mode = "not in" if criteria["prior_commitments"]["offense"]["mode"] == "Exclude" else "in"
+            prior_types = ", ".join(criteria["prior_commitments"]["offense"]["types"])
             summary_parts.append(f"Prior offenses {prior_mode} {prior_types}")
         
         # Current commitments
         if criteria["current_commitments"]["Offense"]["types"]:
-            current_mode = "not in" if criteria["current_commitments"]["Offense"]["mode"] == "Exclude" else "in"
-            current_types = ", ".join(criteria["current_commitments"]["Offense"]["types"])
+            current_mode = "not in" if criteria["current_commitments"]["offense"]["mode"] == "Exclude" else "in"
+            current_types = ", ".join(criteria["current_commitments"]["offense"]["types"])
             summary_parts.append(f"Current offenses {current_mode} {current_types}")
         
         # Controlling offense
         if criteria["controlling_offense"]["Controlling Offense"]["types"]:
-            ctrl_mode = "not in" if criteria["controlling_offense"]["Controlling Offense"]["mode"] == "Exclude" else "in"
-            ctrl_types = ", ".join(criteria["controlling_offense"]["Controlling Offense"]["types"])
+            ctrl_mode = "not in" if criteria["controlling_offense"]["controlling offense"]["mode"] == "Exclude" else "in"
+            ctrl_types = ", ".join(criteria["controlling_offense"]["controlling offense"]["types"])
             summary_parts.append(f"Controlling offenses {ctrl_mode} {ctrl_types}")
         
         # Sentence length
-        min_len = criteria["sentence_length"]["Aggregate Sentence in Months"]["min"]
-        max_len = criteria["sentence_length"]["Aggregate Sentence in Months"]["max"]
+        min_len = criteria["sentence_length"]["aggregate sentence in months"]["min"]
+        max_len = criteria["sentence_length"]["aggregate sentence in months"]["max"]
         if min_len > 240 or max_len < 10000000:
             summary_parts.append(f"Sentence length between {min_len} and {max_len} months")
         

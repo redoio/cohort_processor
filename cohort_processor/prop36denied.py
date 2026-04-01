@@ -5,7 +5,7 @@ import config
 from pandas import ExcelWriter
 
 
-ruleset = {'criteria': {'controlling_offense': {'Controlling Offense': {'types': ['Serious felonies', 'Super strike offenses', 'Violent felonies', 'Registrable sex offenses'],
+ruleset = {'criteria': {'controlling_offense': {'Controlling Offense': {'types': ['Serious felonies', 'Super strike offenses', 'Violent felonies', 'Registerable sex offenses'],
                                                                          'mode': 'Exclude', 
                                                                          'data_label': 'demographics',
                                                                          'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
