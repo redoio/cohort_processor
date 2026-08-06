@@ -82,14 +82,16 @@ def clean_blk(data,
     
     # If input is a list of strings
     elif isinstance(data, list):
-        data_clean = []
-        for off in data:
-            data_clean.append(clean(data = off, remove = remove))
-        return data_clean
+        return [clean(data=off, remove=remove) for off in data]
     
     # If input is a column of a pandas dataframe
     elif isinstance(data, pd.Series):
-        return data.apply(clean, remove = remove)
+        # Match clean() exactly, including its conversion of missing values to
+        # strings, while using pandas string operations instead of Series.apply.
+        data_clean = data.astype(str).str.lower().str.rstrip(".")
+        for value in remove or []:
+            data_clean = data_clean.str.replace(value, "", regex=False)
+        return data_clean
     
     # If input is a pandas dataframe
     elif isinstance(data, pd.DataFrame):
@@ -102,14 +104,14 @@ def clean_blk(data,
         if inplace:
             # Apply the cleaning function onto each column specified
             for col in names.keys():
-                data[names[col]] = data[col].apply(clean, remove = remove)
+                data[names[col]] = clean_blk(data[col], remove=remove)
             return data
         # Create a separate dataframe with the modified columns and leave the existing one unchanged
         else:
-            data_new = data[:]
+            data_new = data.copy()
             # Apply the cleaning function onto each column specified
             for col in names.keys():
-                data_new[names[col]] = data[col].apply(clean, remove = remove)
+                data_new[names[col]] = clean_blk(data[col], remove=remove)
             return data_new
         
 
