@@ -70,56 +70,71 @@ class CohortGenerator():
     def get_population_ids(self, data : str):
         return list(getattr(self, data)[self.id].unique())
 
-    def apply_enhancement_rules(self, data : str, sel_enh : list, how : str, prefix : str, enh_var : list, pop_ids : str):       
-        # Get the appropriate raw dataset
+    def apply_enhancement_rules(self, data : str, sel_enh : list, how : str, prefix : str, enh_var : list, pop_ids : str):
+        """Apply enhancement criteria without Python-level row iteration."""
         df = getattr(self, data)
-        # Rule specific disqualifying IDs
-        disqual_ids = []
-        # Get the qualifying IDs thus far in the rule application process
-        qual_ids = list(set(df[self.id].unique()).difference(set(self.disqual_ids)))
-        df = df[df[self.id].isin(qual_ids)]
+        qualifying_ids = set(df[self.id].unique()).difference(self.disqual_ids)
+        work = df.loc[
+            df[self.id].isin(qualifying_ids),
+            [self.id, *enh_var],
+        ].copy().reset_index(drop=True)
 
-        for ev in enh_var:
-            # Remove prefix 
-            df.loc[:, ev] = df[ev].str.replace(prefix, "")
-            # Clean the column data 
-            df.loc[:, ev] = utils.clean_blk(data = df[ev], remove = ['pc', 'rape', '\n', ' '])
-        
-        # Combine all columns into a single one
-        df['off enh'] = df.apply(lambda row: row[enh_var].dropna().tolist(), axis=1)
-        
-        # Optimize for large datasets - use vectorized operations instead of groupby loop
-        print(f"Processing {len(df)} records for {len(df[self.id].unique())} IDs that are present in the dataset")
-        
-        if len(sel_enh) >= 0:
-            # Get the offense variable in the dataset that best matches the offense indicator 
-            if how == "Exclude":
-                # Vectorized approach: check if any offense in sel_off is present for each ID
-                df_subset = df[[self.id, 'off enh']].copy()
-                df_subset['has_target_enh'] = df_subset.apply(lambda row: list(set(row['off enh']).intersection(set(sel_enh))), axis=1)
-                # Group by ID and check if any offense matches
-                id_has_enh = df_subset.groupby(self.id)['has_target_enh'].apply(lambda x: any(len(v) > 1 for v in x))
-                disqual_ids = id_has_enh[id_has_enh].index.tolist()
-                
-            elif how == "Include":
-                # Vectorized approach: check if all offenses are in sel_off for each ID
-                df_subset = df[[self.id, 'off enh']].copy()
-                df_subset['has_target_enh'] = df_subset.apply(lambda row: list(set(row['off enh']).intersection(set(sel_enh))), axis=1)
-                # Group by ID and check if any offense does NOT match
-                id_has_non_target = df_subset.groupby(self.id)['has_target_enh'].apply(lambda x: all(len(v) == 0 for v in x))
-                disqual_ids = id_has_non_target[id_has_non_target].index.tolist()
-                
-            else: 
-                print("Selection logic not understood")
-        
+        for enhancement_var in enh_var:
+            values = work[enhancement_var].astype("string")
+            values = values.str.replace(prefix, "", regex=False)
+            work[enhancement_var] = utils.clean_blk(
+                data=values,
+                remove=['pc', 'rape', '\n', ' '],
+            )
+
+        print(
+            f"Processing {len(work)} records for "
+            f"{work[self.id].nunique()} IDs that are present in the dataset"
+        )
+
+        # A row matches when any enhancement column contains a selected value.
+        # Reducing with groupby.any then gives one boolean per person without
+        # constructing lists or sets for every row.
+        selected_enhancements = set(sel_enh)
+        selected_values = work[enh_var].where(
+            work[enh_var].isin(selected_enhancements)
+        )
+        row_has_target = selected_values.notna().any(axis=1)
+        id_has_target = row_has_target.groupby(work[self.id]).any()
+
+        if how == "Exclude":
+            # Preserve the original rule: an ID is excluded only when at least
+            # one record contains more than one distinct selected enhancement.
+            selected_long = selected_values.stack()
+            row_target_counts = selected_long.groupby(level=0).nunique()
+            row_has_multiple_targets = row_target_counts.gt(1).reindex(
+                work.index,
+                fill_value=False,
+            )
+            id_has_multiple_targets = row_has_multiple_targets.groupby(
+                work[self.id]
+            ).any()
+            disqual_ids = set(
+                id_has_multiple_targets[id_has_multiple_targets].index
+            )
+        elif how == "Include":
+            disqual_ids = set(id_has_target[~id_has_target].index)
         else:
-            print("Enhancement selection cannot be done as list of eligible or ineligible offenses loaded is empty")
-        
-        print(f"Identified {len(disqual_ids)} disqualifying IDs from {len(qual_ids)} IDs")
-        # Add to the cohort's disqualifying IDs
-        self.disqual_ids = list(set.union(set(self.disqual_ids), set(disqual_ids)))
-        print(f"Number of resultant qualifying IDs from all rules applied thus far is {len(self.get_population_ids(pop_ids))} - {len(self.disqual_ids)} = {len(self.get_population_ids(pop_ids)) - len(self.disqual_ids)}")
-        
+            print("Selection logic not understood")
+            disqual_ids = set()
+
+        print(
+            f"Identified {len(disqual_ids)} disqualifying IDs "
+            f"from {len(qualifying_ids)} IDs"
+        )
+        self.disqual_ids = list(set(self.disqual_ids).union(disqual_ids))
+        population_size = len(self.get_population_ids(pop_ids))
+        print(
+            "Number of resultant qualifying IDs from all rules applied thus far "
+            f"is {population_size} - {len(self.disqual_ids)} = "
+            f"{population_size - len(self.disqual_ids)}"
+        )
+
         return self.disqual_ids
     
     def apply_offense_rules(self, data : str, sel_off : list, how : str, prefix : str, offense_var : str, pop_ids : str):       
