@@ -1,7 +1,7 @@
 # 2023 data (original)
-RAW_CURRENT_COMMITMENTS_URL = "C:/Users/aparn/offenses_data/raw/org/12_2023/CurrentCommitments_CDCR.xlsx"
-RAW_PRIOR_COMMITMENTS_URL = "C:/Users/aparn/offenses_data/raw/org/12_2023/PriorCommitments_CDCR.xlsx"
-RAW_DEMOGRAPHICS_URL = "C:/Users/aparn/offenses_data/raw/org/12_2023/Demographics_CDCR.xlsx"
+RAW_CURRENT_COMMITMENTS_URL = "C:/Users/aparn/offenses_data/raw/org/04_2025/CurrentCommitments_CDCR.xlsx"
+RAW_PRIOR_COMMITMENTS_URL = "C:/Users/aparn/offenses_data/raw/org/04_2025/PriorCommitments_CDCR.xlsx"
+RAW_DEMOGRAPHICS_URL = "C:/Users/aparn/offenses_data/raw/org/04_2025/Demographics_CDCR.xlsx"
 
 # 2025 data (hashed)
 DEFAULT_DATA_URL = "https://raw.githubusercontent.com/redoio/offenses_data/main/data/04_2025/demographics.csv"

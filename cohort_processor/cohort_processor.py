@@ -170,8 +170,9 @@ class CohortGenerator():
                 df_subset = df[[self.id, offense_var]].copy()
                 df_subset['has_target_offense'] = df_subset[offense_var].isin(sel_off)
                 # Group by ID and check if any offense does NOT match
-                id_has_non_target = df_subset.groupby(self.id)['has_target_offense'].apply(lambda x: not x.all())
-                disqual_ids = id_has_non_target[id_has_non_target].index.tolist()
+                id_has_offense = df_subset.groupby(self.id)['has_target_offense'].any()
+                disqual_ids = id_has_offense[~id_has_offense].index.tolist()
+                
                 
             else: 
                 print("Selection logic not understood")
@@ -400,7 +401,7 @@ class CohortGenerator():
             raw_df = getattr(self, cat+"_raw")
             # Find qualifying records
             resp_df = raw_df[~raw_df[self.id].isin(self.disqual_ids)]
-            print(f"Found {len(resp_df)} records in {cat} dataset for {len(resp_df[self.id].unique())} IDs out of {len(self.disqual_ids)} IDs")
+            print(f"Found {len(resp_df)} records in {cat} dataset for {len(resp_df[self.id].unique())} IDs out of {len(raw_df[self.id].unique())} total IDs available in the original dataset")
             # Set the data tables and assign them to the respective categories
             setattr(self, cat, resp_df)
         return

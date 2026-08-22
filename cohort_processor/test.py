@@ -38,12 +38,22 @@ ruleset = {'criteria': {'sentence_length': {'aggregate sentence in months': {'mi
                         }}
 
 
+ruleset = {'criteria': {'current_commitments': {'offense': {'types': ['Homicide offenses'],
+                                                          'mode': 'Include', 
+                                                          'data_label': 'prior_commitments',
+                                                          'implications': {'codes': {'all': ["/att", "(664)", "2nd"], 
+                                                                                    '459': ["/att", "(664)"]}, 
+                                                                           'perm': 2}
+                                                          }
+                                              },                                             
+                        }
+           }
 
 # Initialize the cohort and generate a non-non-nons scenario
 cohort = CohortGenerator(label = 'non-non-nons', desc = "Trial")
-cohort.get_raw_data(input_data_path = {'demographics': config.DEFAULT_DATA_URL, 
-                                       'current_commitments': config.CURRENT_COMMITMENTS_URL, 
-                                       'prior_commitments': config.PRIOR_COMMITMENTS_URL}, 
+cohort.get_raw_data(input_data_path = {'demographics': config.RAW_DEMOGRAPHICS_URL, 
+                                       'current_commitments': config.RAW_CURRENT_COMMITMENTS_URL, 
+                                       'prior_commitments': config.RAW_PRIOR_COMMITMENTS_URL}, 
                     id_var = "cdcno", 
                     clean_col_names = True)
 cohort.get_offense_categorizations(config.OFFENSE_CODES_URL)
