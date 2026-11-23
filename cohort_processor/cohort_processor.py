@@ -92,9 +92,7 @@ class CohortGenerator():
             f"{work[self.id].nunique()} IDs that are present in the dataset"
         )
 
-        # A row matches when any enhancement column contains a selected value.
-        # Reducing with groupby.any then gives one boolean per person without
-        # constructing lists or sets for every row.
+        # ANY match: true if the person has any selected enhancement on any row.
         selected_enhancements = set(sel_enh)
         selected_values = work[enh_var].where(
             work[enh_var].isin(selected_enhancements)
@@ -103,20 +101,8 @@ class CohortGenerator():
         id_has_target = row_has_target.groupby(work[self.id]).any()
 
         if how == "Exclude":
-            # Preserve the original rule: an ID is excluded only when at least
-            # one record contains more than one distinct selected enhancement.
-            selected_long = selected_values.stack()
-            row_target_counts = selected_long.groupby(level=0).nunique()
-            row_has_multiple_targets = row_target_counts.gt(1).reindex(
-                work.index,
-                fill_value=False,
-            )
-            id_has_multiple_targets = row_has_multiple_targets.groupby(
-                work[self.id]
-            ).any()
-            disqual_ids = set(
-                id_has_multiple_targets[id_has_multiple_targets].index
-            )
+            # Remove anyone with at least one selected enhancement on any row.
+            disqual_ids = set(id_has_target[id_has_target].index)
         elif how == "Include":
             disqual_ids = set(id_has_target[~id_has_target].index)
         else:

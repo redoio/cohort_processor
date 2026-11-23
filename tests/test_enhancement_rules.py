@@ -44,27 +44,46 @@ class EnhancementRuleTests(unittest.TestCase):
             pop_ids="demographics_raw",
         )
 
-    def test_exclude_requires_two_distinct_matching_enhancements(self):
+    def test_exclude_disqualifies_ids_with_any_selected_match(self):
+        # ANY logic: one selected enhancement on any row is enough to exclude.
+        # A = 12022.5, C = 12022.5 + 186.22, D = 12022.5 twice → all out.
+        # B = non-selected 999 only → stays.
         disqualified = self.apply_rule("Exclude")
 
-        self.assertEqual({"C"}, set(disqualified))
+        self.assertEqual({"A", "C", "D"}, set(disqualified))
 
     def test_include_disqualifies_only_ids_without_any_match(self):
         disqualified = self.apply_rule("Include")
 
         self.assertEqual({"B"}, set(disqualified))
 
-    def test_duplicate_matches_on_one_record_count_as_one_enhancement(self):
+    def test_exclude_duplicate_selected_match_still_disqualifies(self):
+        # Same selected code twice still counts as a match under ANY Exclude.
         disqualified = self.apply_rule("Exclude")
 
-        self.assertNotIn("D", disqualified)
+        self.assertIn("D", set(disqualified))
+
+    def test_exclude_selected_matches_on_different_rows_still_disqualifies(self):
+        # Selected codes on different commitment rows still exclude the person.
+        self.cohort.demographics_raw = pd.DataFrame({"cdcno": ["F"]})
+        self.cohort.current_commitments_raw = pd.DataFrame(
+            {
+                "cdcno": ["F", "F"],
+                "off enh1": ["PC12022.5", None],
+                "off enh2": [None, "PC186.22"],
+            }
+        )
+
+        disqualified = self.apply_rule("Exclude")
+
+        self.assertEqual({"F"}, set(disqualified))
 
     def test_existing_disqualifications_are_preserved_and_not_reprocessed(self):
         self.cohort.disqual_ids = ["A"]
 
         disqualified = self.apply_rule("Exclude")
 
-        self.assertEqual({"A", "C"}, set(disqualified))
+        self.assertEqual({"A", "C", "D"}, set(disqualified))
 
     def test_empty_selection_does_not_change_results(self):
         disqualified = self.cohort.apply_enhancement_rules(
